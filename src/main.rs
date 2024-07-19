@@ -2,8 +2,8 @@
 #![no_main]
 
 mod boot;
-mod gpio;
+mod driver;
 mod kernel;
 mod memory;
 mod panic;
-mod uart;
+mod sync;
