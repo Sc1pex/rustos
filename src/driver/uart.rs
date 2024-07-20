@@ -1,5 +1,5 @@
 use super::Driver;
-use crate::{memory::mmio, sync::NullLock};
+use crate::{log::LogWrite, memory::mmio, sync::NullLock};
 use core::{arch::asm, fmt::Write};
 
 const BASE: u32 = 0xFE201000;
@@ -97,8 +97,7 @@ impl UARTDriver {
     }
 
     pub fn write_char(&self, c: char) {
-        // Cannot return an error
-        let _ = self.inner.lock(|i| {
+        self.inner.lock(|i| {
             let mut b = [0; 4];
             let s = c.encode_utf8(&mut b);
             for c in s.bytes() {
@@ -174,5 +173,11 @@ impl Driver for UARTDriver {
     unsafe fn init(&self) -> Result<(), &'static str> {
         self.inner.lock(|i| i.init());
         Ok(())
+    }
+}
+
+impl LogWrite for UARTDriver {
+    fn write_str(&self, s: &str) {
+        self.inner.lock(|i| i.write_str(s).unwrap())
     }
 }

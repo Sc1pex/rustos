@@ -1,5 +1,5 @@
 use super::DriverDescriptor;
-use crate::sync::NullLock;
+use crate::{info, sync::NullLock};
 
 pub struct DriverManagerInner<const N: usize> {
     drivers: [Option<DriverDescriptor>; N],
@@ -33,6 +33,7 @@ impl<const N: usize> DriverManagerInner<N> {
                         panic!("Driver {} failed to run post_init callback:\n{}", d.name, s)
                     }
                 }
+                info!("Initialized {} driver", d.name);
             });
     }
 }

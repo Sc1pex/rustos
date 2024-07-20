@@ -2,6 +2,8 @@ use gpio::GPIODriver;
 use manager::DriverManager;
 use uart::UARTDriver;
 
+use crate::log;
+
 pub mod gpio;
 pub mod manager;
 pub mod uart;
@@ -36,7 +38,7 @@ pub unsafe fn setup_drivers() {
         name: "UART",
         driver: &UART_DRIVER,
         post_init: Some(|| {
-            UART_DRIVER.write_str("Hello there");
+            log::logger().set_writer(&UART_DRIVER);
             Ok(())
         }),
     };
