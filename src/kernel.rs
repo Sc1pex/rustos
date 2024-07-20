@@ -16,6 +16,10 @@ fn kernel_start() -> ! {
     loop {
         if let Some(c) = driver::UART_DRIVER.read_char() {
             driver::UART_DRIVER.write_char(c);
+
+            if c == '8' {
+                panic!("wrong number. c cannot be {}", c);
+            }
         }
     }
 }

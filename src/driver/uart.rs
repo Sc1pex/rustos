@@ -24,6 +24,10 @@ const FR_TXFF: u32 = 5;
 struct UARTDriverInner {}
 impl UARTDriverInner {
     fn init(&self) {
+        // Panic initializes it's own uart driver
+        // so make sure there's no data left to write
+        self.flush();
+
         mmio::write(CR, 0); // Disable UART
         mmio::write(ICR, 0); // Clear pending interrups
 
@@ -106,7 +110,7 @@ impl UARTDriver {
         });
     }
     pub fn write_str(&self, s: &str) {
-        let _ = self.inner.lock(|i| i.write_str(s));
+        self.inner.lock(|i| i.write_str(s)).unwrap();
     }
 
     /// Block until the transmit FIFO is empty
