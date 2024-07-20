@@ -1,6 +1,9 @@
 use crate::driver;
 
 pub unsafe fn kernel_init() -> ! {
+    #[cfg(feature = "debug_wait")]
+    core::arch::asm!("1:", "wfe", "b 1b");
+
     driver::setup_drivers();
     driver::manager().init();
 
