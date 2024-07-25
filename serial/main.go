@@ -142,7 +142,7 @@ func uploadKernel(port serial.Port, kernelPath string) error {
 				break
 			}
 		}
-		fmt.Printf("Wrote block %v/%v\r", b, blocks)
+		fmt.Printf("Wrote block %v/%v\r", b+1, blocks)
 	}
 
 	return nil
