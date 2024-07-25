@@ -1,22 +1,7 @@
-use gpio::GPIODriver;
-use manager::DriverManager;
-use uart::UARTDriver;
-
-use crate::log;
-
-pub mod gpio;
-pub mod manager;
-pub mod uart;
-
-pub trait Driver {
-    unsafe fn init(&self) -> Result<(), &'static str>;
-}
-
-pub struct DriverDescriptor {
-    name: &'static str,
-    driver: &'static (dyn Driver + Sync),
-    post_init: Option<unsafe fn() -> Result<(), &'static str>>,
-}
+use lib::{
+    driver::{gpio::GPIODriver, manager::DriverManager, uart::UARTDriver, DriverDescriptor},
+    log,
+};
 
 pub const DRIVER_COUNT: usize = 2;
 static DRIVER_MANAGER: DriverManager<DRIVER_COUNT> = DriverManager::new();

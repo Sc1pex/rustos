@@ -5,7 +5,4 @@
 mod boot;
 mod driver;
 mod kernel;
-mod log;
-mod memory;
 mod panic;
-mod sync;

@@ -67,10 +67,7 @@ impl UARTDriverInner {
             }
         }
 
-        match mmio::read(DR) as u8 {
-            b'\r' => b'\n',
-            c => c,
-        }
+        mmio::read(DR) as u8
     }
 
     fn read(&self) -> Option<u8> {
@@ -98,6 +95,10 @@ impl UARTDriver {
         Self {
             inner: NullLock::new(UARTDriverInner {}),
         }
+    }
+
+    pub fn write_byte(&self, b: u8) {
+        self.inner.lock(|i| i.write(b))
     }
 
     pub fn write_char(&self, c: char) {
@@ -136,7 +137,7 @@ impl UARTDriver {
 
                 if let Ok(c) = core::str::from_utf8(&b[0..idx]) {
                     // TODO: Check that str has lenght of 1?
-                    return c.chars().next().unwrap();
+                    return Self::map_char(c.chars().next().unwrap());
                 }
             }
 
@@ -152,7 +153,7 @@ impl UARTDriver {
             b[0] = i.read()?;
             if let Ok(c) = core::str::from_utf8(&b[0..=1]) {
                 // TODO: Check that str has lenght of 1?
-                return Some(c.chars().next().unwrap());
+                return Some(Self::map_char(c.chars().next().unwrap()));
             }
 
             for idx in 1..4 {
@@ -160,7 +161,7 @@ impl UARTDriver {
 
                 if let Ok(c) = core::str::from_utf8(&b[0..=idx]) {
                     // TODO: Check that str has lenght of 1?
-                    return Some(c.chars().next().unwrap());
+                    return Some(Self::map_char(c.chars().next().unwrap()));
                 }
             }
 
@@ -171,6 +172,13 @@ impl UARTDriver {
 
     pub fn write_fmt(&self, args: core::fmt::Arguments) -> core::fmt::Result {
         self.inner.lock(|i| i.write_fmt(args))
+    }
+
+    fn map_char(c: char) -> char {
+        match c {
+            '\r' => '\n',
+            _ => c,
+        }
     }
 }
 impl Driver for UARTDriver {

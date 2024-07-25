@@ -1,4 +1,5 @@
-use crate::{driver, info};
+use crate::driver;
+use lib::{info, println};
 
 pub unsafe fn kernel_init() -> ! {
     #[cfg(feature = "debug_wait")]
@@ -14,12 +15,8 @@ fn kernel_start() -> ! {
     info!("Kernel started");
 
     loop {
-        if let Some(c) = driver::UART_DRIVER.read_char() {
-            driver::UART_DRIVER.write_char(c);
-
-            if c == '8' {
-                panic!("wrong number. c cannot be {}", c);
-            }
+        if let Some(c) = driver::UART_DRIVER.read() {
+            println!("Read byte: {c}")
         }
     }
 }

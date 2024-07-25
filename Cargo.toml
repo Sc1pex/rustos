@@ -1,8 +1,4 @@
-[package]
-name = "rustos"
-version = "0.1.0"
-edition = "2021"
-
-[features]
-default = []
-debug_wait = []
+[workspace]
+resolver = "2"
+members = ["kernel", "lib", "chainloader"]
+exclude = ["serpush"]

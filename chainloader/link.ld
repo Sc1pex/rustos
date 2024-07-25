@@ -1,16 +1,24 @@
+__load_addr = 0x80000;
+
+ENTRY(__load_addr)
+
 SECTIONS
 {
-    . = 0x80000;
+    . = 0x2000000;
+    __bin_start = .;
     .text : { 
         KEEP(*(.text.boot))
-        *(.text .text.* .gnu.linkonce.t*) 
+        *(.text .text.*) 
     }
     .rodata : { *(.rodata .rodata.*) }
     .data : { *(.data .data.*) }
-    .bss : {
+    . = ALIGN(8);
+    __bin_end = .;
+
+    .bss : ALIGN(16) {
         __bss_start = .;
         *(.bss .bss.*)
-        *(COMMON)
+        . = ALIGN(16);
         __bss_end = .;
     }
 }
