@@ -1,6 +1,6 @@
 use crate::driver;
 use core::time::Duration;
-use lib::{info, time};
+use lib::{exception::current_el, info, time};
 
 pub unsafe fn kernel_init() -> ! {
     #[cfg(feature = "debug_wait")]
@@ -14,6 +14,7 @@ pub unsafe fn kernel_init() -> ! {
 
 fn kernel_start() -> ! {
     info!("Kernel started");
+    info!("Current privilege level: {:?}", current_el());
 
     info!("Spinning for 2 seconds");
     time::spin_for(Duration::from_secs(2));

@@ -7,8 +7,8 @@ _start:
     and x1, x1, #3
     cbnz x1, 3f
 
-    ldr x1, =_start
-    mov sp, x1
+    ldr x0, =_start
+    mov sp, x0
     ldr x1, =__bss_start
     ldr w2, =__bss_size
 1:  
@@ -18,6 +18,7 @@ _start:
     cbnz w2, 1b
 
 2: 
+    // __start_rust is extern "C" so x0 holds the first argument
     bl __start_rust
 
 3:
