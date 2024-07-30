@@ -1,4 +1,4 @@
-use crate::sync::NullLock;
+use crate::{sync::NullLock, time};
 
 use super::{LogLevel, LogWrite};
 use core::fmt::Write;
@@ -94,7 +94,16 @@ impl BufLogger {
 
     pub fn log(&self, level: LogLevel, args: core::fmt::Arguments) {
         self.inner.lock(|i| {
-            write!(i, "{}: {}", level, args).unwrap();
+            let uptime = time::uptime();
+            write!(
+                i,
+                "[{:>4}.{:06}] {}: {}",
+                uptime.as_secs(),
+                uptime.subsec_micros(),
+                level,
+                args
+            )
+            .unwrap();
         })
     }
 

@@ -6,3 +6,4 @@ pub mod driver;
 pub mod log;
 pub mod memory;
 pub mod sync;
+pub mod time;

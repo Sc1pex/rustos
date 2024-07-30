@@ -1,5 +1,6 @@
 use crate::driver;
-use lib::{info, println};
+use core::time::Duration;
+use lib::{info, time};
 
 pub unsafe fn kernel_init() -> ! {
     #[cfg(feature = "debug_wait")]
@@ -14,9 +15,15 @@ pub unsafe fn kernel_init() -> ! {
 fn kernel_start() -> ! {
     info!("Kernel started");
 
+    info!("Spinning for 2 seconds");
+    time::spin_for(Duration::from_secs(2));
+    info!("Done");
+
+    time::spin_for(Duration::from_nanos(10));
+
     loop {
-        if let Some(c) = driver::UART_DRIVER.read() {
-            println!("Read byte: {c}")
+        if let Some(c) = driver::UART_DRIVER.read_char() {
+            info!("Read {}", c)
         }
     }
 }
