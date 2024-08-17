@@ -1,4 +1,4 @@
-use crate::warn;
+use crate::{read_reg, warn};
 use core::{arch::asm, ops::Add, time::Duration};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
@@ -13,15 +13,11 @@ impl Add for TimerValue {
 }
 
 fn read_cntfrq() -> u64 {
-    let x: u64;
-    unsafe { asm!("mrs {}, CNTFRQ_EL0", out(reg) x) }
-    x
+    read_reg!("CNTFRQ_EL0")
 }
 
 fn read_cntpct() -> u64 {
-    let x: u64;
-    unsafe { asm!("mrs {}, CNTPCT_EL0", out(reg) x) }
-    x
+    read_reg!("CNTPCT_EL0")
 }
 
 fn current_cntpct() -> TimerValue {

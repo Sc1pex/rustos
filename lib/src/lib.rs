@@ -7,4 +7,5 @@ pub mod exception;
 pub mod log;
 pub mod memory;
 pub mod sync;
+pub mod sys_reg;
 pub mod time;
