@@ -1,4 +1,5 @@
 #![feature(format_args_nl)]
+#![feature(new_range_api)]
 #![no_std]
 #![no_main]
 

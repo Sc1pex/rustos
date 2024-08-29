@@ -1,3 +1,6 @@
+pub mod map;
+pub mod mmu;
+
 pub mod mmio {
     pub fn read(addr: u32) -> u32 {
         unsafe { core::ptr::read_volatile(addr as *const u32) }

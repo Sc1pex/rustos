@@ -2,7 +2,7 @@ use super::Driver;
 use crate::{log::LogWrite, memory::mmio, sync::NullLock};
 use core::{arch::asm, fmt::Write};
 
-const BASE: u32 = 0xFE201000;
+const BASE: u32 = 0x1FFF_1000;
 const DR: u32 = BASE + 0;
 const FR: u32 = BASE + 0x18;
 const IBRD: u32 = BASE + 0x24;
