@@ -2,6 +2,7 @@ use buflog::BufLogger;
 
 mod buflog;
 
+#[allow(dead_code)]
 #[derive(Clone, Copy)]
 pub enum LogLevel {
     Info,

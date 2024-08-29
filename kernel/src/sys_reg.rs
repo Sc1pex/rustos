@@ -10,6 +10,6 @@ macro_rules! read_reg {
 #[macro_export]
 macro_rules! write_reg {
     ($name: expr, $value: expr) => {{
-        unsafe { ::core::arch::asm!(concat!("msr ", $name, ", {}"), in(reg) $value) }
+        unsafe { ::core::arch::asm!(concat!("msr ", $name, ", {}"), in(reg) ($value as u64)) }
     }};
 }

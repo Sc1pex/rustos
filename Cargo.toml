@@ -1,4 +1,4 @@
 [workspace]
 resolver = "2"
-members = ["kernel", "lib", "chainloader"]
+members = ["kernel", "chainloader"]
 exclude = ["serpush"]

@@ -1,5 +1,5 @@
+use crate::driver::uart::UARTDriver;
 use core::panic::PanicInfo;
-use lib::driver::uart::UARTDriver;
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {

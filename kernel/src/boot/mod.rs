@@ -1,7 +1,7 @@
-use lib::write_reg;
-
-use crate::kernel::kernel_init;
+use crate::kernel_init;
 use core::arch::{asm, global_asm};
+
+use crate::write_reg;
 
 global_asm!(include_str!("boot.S"));
 

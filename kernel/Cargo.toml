@@ -6,6 +6,3 @@ edition = "2021"
 [features]
 default = []
 debug_wait = []
-
-[dependencies]
-lib = { path = "../lib" }

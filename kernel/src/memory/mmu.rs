@@ -1,6 +1,7 @@
 use crate::{read_reg, write_reg};
 use core::{arch::asm, range::RangeInclusive};
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub enum MMUEnableError {
     AlreadyEnabled,
@@ -228,7 +229,7 @@ static KERNEL_LAYOUT: KernelVirtualLayout<4> = KernelVirtualLayout {
             name: "Remmaped MMIO",
             virtual_range: || RangeInclusive {
                 start: 0x1FFF_0000,
-                end: 0x1FFFF_FFFF,
+                end: 0x1FFF_FFFF,
             },
             attribute_fields: AttributeFields {
                 mem_attributes: MemAttributes::Device,

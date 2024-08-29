@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use super::Driver;
 use crate::{log::LogWrite, memory::mmio, sync::NullLock};
 use core::{arch::asm, fmt::Write};
@@ -90,6 +92,7 @@ impl Write for UARTDriverInner {
 pub struct UARTDriver {
     inner: NullLock<UARTDriverInner>,
 }
+
 impl UARTDriver {
     pub const fn new() -> Self {
         Self {

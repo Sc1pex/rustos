@@ -60,6 +60,8 @@ impl GPIODriverInner {
 pub struct GPIODriver {
     inner: NullLock<GPIODriverInner>,
 }
+
+#[allow(dead_code)]
 impl GPIODriver {
     pub const fn new() -> Self {
         Self {

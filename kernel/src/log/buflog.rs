@@ -106,12 +106,4 @@ impl BufLogger {
             .unwrap();
         })
     }
-
-    pub fn write(&self, args: core::fmt::Arguments) {
-        self.inner.lock(|i| i.write_fmt(args).unwrap())
-    }
-
-    pub fn flush(&self) {
-        self.inner.lock(|i| i.flush())
-    }
 }
