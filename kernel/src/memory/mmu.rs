@@ -195,7 +195,7 @@ impl<const TABLES: usize> TranslationTables<TABLES> {
 
 const KERNEL_LV2_TABLES: usize = (super::map::END_INCLUSIVE + 1) >> SHIFT_512M;
 static mut KERNEL_TABLES: TranslationTables<KERNEL_LV2_TABLES> = TranslationTables::new();
-static KERNEL_LAYOUT: KernelVirtualLayout<4> = KernelVirtualLayout {
+pub static KERNEL_LAYOUT: KernelVirtualLayout<4> = KernelVirtualLayout {
     max_virt_addr: super::map::END_INCLUSIVE,
 
     layouts: [
@@ -257,10 +257,10 @@ static KERNEL_LAYOUT: KernelVirtualLayout<4> = KernelVirtualLayout {
 const SHIFT_64K: usize = (64 as usize * 1024).trailing_zeros() as usize;
 const SHIFT_512M: usize = (512 as usize * 1024 * 1024).trailing_zeros() as usize;
 
-struct KernelVirtualLayout<const LAYOUTS: usize> {
+pub struct KernelVirtualLayout<const LAYOUTS: usize> {
     max_virt_addr: usize,
 
-    layouts: [TranslationDescriptor; LAYOUTS],
+    pub layouts: [TranslationDescriptor; LAYOUTS],
 }
 
 impl<const LAYOUTS: usize> KernelVirtualLayout<LAYOUTS> {
@@ -308,4 +308,48 @@ pub struct TranslationDescriptor {
     pub virtual_range: fn() -> RangeInclusive<usize>,
     pub map_to: Option<usize>,
     pub attribute_fields: AttributeFields,
+}
+
+impl core::fmt::Display for TranslationDescriptor {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let start = (self.virtual_range)().start;
+        let end = (self.virtual_range)().end;
+        let size = end - start + 1;
+
+        const KIB: usize = 1024;
+        const MIB: usize = 1024 * 1024;
+        const GIB: usize = 1024 * 1024 * 1024;
+
+        let (size, unit) = if (size / GIB) > 0 {
+            (size.div_ceil(GIB), "GiB")
+        } else if (size / MIB) > 0 {
+            (size.div_ceil(MIB), "MiB")
+        } else if (size / KIB) > 0 {
+            (size.div_ceil(KIB), "KiB")
+        } else {
+            (size, "Byte")
+        };
+
+        let attr = match self.attribute_fields.mem_attributes {
+            MemAttributes::CacheableDRAM => "RAM",
+            MemAttributes::Device => "Dev",
+        };
+
+        let access = match self.attribute_fields.acc_perms {
+            AccessPermissions::ReadOnly => "RO",
+            AccessPermissions::ReadWrite => "RW",
+        };
+
+        let execute = if self.attribute_fields.execute_never {
+            "PXN"
+        } else {
+            "PX"
+        };
+
+        write!(
+            f,
+            "{:28}: {:#010X} - {:#010X} | {:3} {} | {} {} {}",
+            self.name, start, end, size, unit, attr, access, execute
+        )
+    }
 }

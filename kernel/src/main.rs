@@ -34,6 +34,11 @@ fn kernel_start() -> ! {
     info!("Kernel started");
     info!("Current privilege level: {:?}", current_el());
 
+    info!("MMU Translations:");
+    for t in &mmu::KERNEL_LAYOUT.layouts {
+        info!("    {t}");
+    }
+
     info!("Spinning for 1 seconds");
     time::spin_for(Duration::from_secs(2));
 
