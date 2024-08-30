@@ -1,7 +1,9 @@
-pub mod layout;
+mod layout;
 pub mod map;
 pub mod mmu;
-pub mod translation_table;
+mod translation_table;
+
+pub use layout::print_kernel_memory_layout;
 
 pub mod mmio {
     pub fn read(addr: u32) -> u32 {

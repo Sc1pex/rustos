@@ -83,7 +83,7 @@ impl TableDescriptor {
 
 #[repr(C)]
 #[repr(align(65536))]
-pub struct TranslationTables<const TABLES: usize> {
+pub(super) struct TranslationTables<const TABLES: usize> {
     lvl3: [[PageDescriptor; 1 << 13]; TABLES],
     lvl2: [TableDescriptor; TABLES],
 }

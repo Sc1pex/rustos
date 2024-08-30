@@ -1,7 +1,7 @@
 use super::DriverDescriptor;
 use crate::{info, sync::NullLock};
 
-pub struct DriverManagerInner<const N: usize> {
+struct DriverManagerInner<const N: usize> {
     drivers: [Option<DriverDescriptor>; N],
     idx: usize,
 }

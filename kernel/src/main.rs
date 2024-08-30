@@ -18,7 +18,7 @@ mod sync;
 mod sys_reg;
 mod time;
 
-pub unsafe fn kernel_init() -> ! {
+unsafe fn kernel_init() -> ! {
     #[cfg(feature = "debug_wait")]
     core::arch::asm!("1:", "wfe", "b 1b");
 
@@ -34,7 +34,7 @@ fn kernel_start() -> ! {
     info!("Kernel started");
     info!("Current privilege level: {:?}", current_el());
 
-    memory::layout::print_kernel_memory_layout();
+    memory::print_kernel_memory_layout();
 
     info!("Spinning for 1 seconds");
     time::spin_for(Duration::from_secs(2));

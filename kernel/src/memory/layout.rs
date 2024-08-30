@@ -1,19 +1,19 @@
 use core::range::RangeInclusive;
 
 #[derive(Copy, Clone)]
-pub enum MemAttributes {
+pub(super) enum MemAttributes {
     CacheableDRAM,
     Device,
 }
 
 #[derive(Copy, Clone)]
-pub enum AccessPermissions {
+pub(super) enum AccessPermissions {
     ReadOnly,
     ReadWrite,
 }
 
 #[derive(Copy, Clone)]
-pub struct AttributeFields {
+pub(super) struct AttributeFields {
     pub mem_attributes: MemAttributes,
     pub acc_perms: AccessPermissions,
     pub execute_never: bool,
@@ -26,7 +26,7 @@ struct TranslationDescriptor {
     pub attribute_fields: AttributeFields,
 }
 
-pub struct KernelVirtualLayout<const LAYOUTS: usize> {
+pub(super) struct KernelVirtualLayout<const LAYOUTS: usize> {
     max_virt_addr: usize,
 
     layouts: [TranslationDescriptor; LAYOUTS],

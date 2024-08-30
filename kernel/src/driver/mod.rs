@@ -20,7 +20,7 @@ pub struct DriverDescriptor {
 pub const DRIVER_COUNT: usize = 2;
 static DRIVER_MANAGER: DriverManager<DRIVER_COUNT> = DriverManager::new();
 
-pub static GPIO_DRIVER: GPIODriver = GPIODriver::new();
+static GPIO_DRIVER: GPIODriver = GPIODriver::new();
 pub static UART_DRIVER: UARTDriver = UARTDriver::new();
 
 pub unsafe fn setup_drivers() {
