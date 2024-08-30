@@ -1,4 +1,4 @@
-PAGE_SIZE = 4K;
+PAGE_SIZE = 64K;
 PAGE_MASK = PAGE_SIZE - 1;
 
 RPI_PHYS_LOAD_ADDR = 0x80000;
@@ -22,7 +22,7 @@ SECTIONS
     . = ALIGN(PAGE_SIZE);
     __code_end = .;
 
-    .data : { *(.data .data.*) }
+    .data : { *( .data* ) }
     .bss : ALIGN(16) {
         __bss_start = .;
         *(.bss .bss.*)

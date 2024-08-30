@@ -90,6 +90,8 @@ func output(port serial.Port, kernelPath string) {
 	}
 }
 
+const blockSize = 512
+
 func uploadKernel(port serial.Port, kernelPath string) error {
 	fmt.Printf("Starting to write kernel\r\n")
 
@@ -102,6 +104,13 @@ func uploadKernel(port serial.Port, kernelPath string) error {
 	}
 
 	size := uint32(len(kernel))
+	if size%blockSize != 0 {
+		size += 512 - (size % blockSize)
+		kernel_padd := make([]byte, size)
+		copy(kernel_padd, kernel)
+		kernel = kernel_padd
+	}
+
 	buf := new(bytes.Buffer)
 	err = binary.Write(buf, binary.LittleEndian, size)
 	if err != nil {
@@ -110,7 +119,6 @@ func uploadKernel(port serial.Port, kernelPath string) error {
 
 	port.Write(buf.Bytes())
 
-	blockSize := 512
 	blocks := size / uint32(blockSize)
 
 	for b := range blocks {
@@ -121,7 +129,7 @@ func uploadKernel(port serial.Port, kernelPath string) error {
 				return err
 			}
 
-			rbuf := make([]byte, blockSize)
+			rbuf := make([]byte, len(block))
 			err = readAll(port, rbuf)
 			if err != nil {
 				return err
