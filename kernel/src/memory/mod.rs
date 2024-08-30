@@ -1,5 +1,7 @@
+pub mod layout;
 pub mod map;
 pub mod mmu;
+pub mod translation_table;
 
 pub mod mmio {
     pub fn read(addr: u32) -> u32 {
