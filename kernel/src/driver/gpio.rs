@@ -1,12 +1,6 @@
 use super::Driver;
 use crate::{memory::mmio, sync::NullLock};
 
-const BASE: u32 = 0xFE200000;
-const GPFSEL0: u32 = BASE + 0;
-const GPSET0: u32 = BASE + 0x1C;
-const GPCLR0: u32 = BASE + 0x28;
-const GPPUPDN0: u32 = BASE + 0xE4;
-
 #[allow(dead_code)]
 pub enum Function {
     Output = 0b001,
@@ -25,29 +19,34 @@ pub enum Resistor {
     Down = 0b10,
 }
 
-struct GPIODriverInner {}
+struct GPIODriverInner {
+    gpfsel0: usize,
+    gpset0: usize,
+    gpclr0: usize,
+    gppupdn0: usize,
+}
 impl GPIODriverInner {
     fn function(&self, pin: u32, val: Function) {
-        self.write(pin, val as u32, GPFSEL0, 3);
+        self.write(pin, val as u32, self.gpfsel0, 3);
     }
 
     fn resistor(&self, pin: u32, val: Resistor) {
-        self.write(pin, val as u32, GPPUPDN0, 2);
+        self.write(pin, val as u32, self.gppupdn0, 2);
     }
 
     fn set(&self, pin: u32) {
-        self.write(pin, 1, GPSET0, 1);
+        self.write(pin, 1, self.gpset0, 1);
     }
 
     fn clear(&self, pin: u32) {
-        self.write(pin, 1, GPCLR0, 1);
+        self.write(pin, 1, self.gpclr0, 1);
     }
 
-    fn write(&self, pin: u32, val: u32, base: u32, field_size: u32) {
+    fn write(&self, pin: u32, val: u32, base: usize, field_size: u32) {
         let field_mask = (1 << field_size) - 1;
 
         let num_fields = 32 / field_size;
-        let reg = base + (pin / num_fields) * 4;
+        let reg = base + ((pin / num_fields) * 4) as usize;
         let shift = (pin % num_fields) * field_size;
 
         let mut reg_val = mmio::read(reg);
@@ -63,9 +62,14 @@ pub struct GPIODriver {
 
 #[allow(dead_code)]
 impl GPIODriver {
-    pub const fn new() -> Self {
+    pub const fn new(base: usize) -> Self {
         Self {
-            inner: NullLock::new(GPIODriverInner {}),
+            inner: NullLock::new(GPIODriverInner {
+                gpfsel0: base + 0,
+                gpset0: base + 0x1C,
+                gpclr0: base + 0x28,
+                gppupdn0: base + 0xE4,
+            }),
         }
     }
 

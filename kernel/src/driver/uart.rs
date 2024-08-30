@@ -1,17 +1,6 @@
-#![allow(dead_code)]
-
 use super::Driver;
 use crate::{log::LogWrite, memory::mmio, sync::NullLock};
 use core::{arch::asm, fmt::Write};
-
-const BASE: u32 = 0x1FFF_1000;
-const DR: u32 = BASE + 0;
-const FR: u32 = BASE + 0x18;
-const IBRD: u32 = BASE + 0x24;
-const FBRD: u32 = BASE + 0x28;
-const LCRH: u32 = BASE + 0x2C;
-const CR: u32 = BASE + 0x30;
-const ICR: u32 = BASE + 0x44;
 
 const LCRH_FEN: u32 = 4;
 const LCRH_WLEN: u32 = 5;
@@ -23,29 +12,37 @@ const CR_RXE: u32 = 9;
 const FR_RXFE: u32 = 4;
 const FR_TXFF: u32 = 5;
 
-struct UARTDriverInner {}
+struct UARTDriverInner {
+    dr: usize,
+    fr: usize,
+    ibrd: usize,
+    fbrd: usize,
+    lcrh: usize,
+    cr: usize,
+    icr: usize,
+}
 impl UARTDriverInner {
     fn init(&self) {
         // Panic initializes it's own uart driver
         // so make sure there's no data left to write
         self.flush();
 
-        mmio::write(CR, 0); // Disable UART
-        mmio::write(ICR, 0); // Clear pending interrups
+        mmio::write(self.cr, 0); // Disable UART
+        mmio::write(self.icr, 0); // Clear pending interrups
 
         // Set baudrate to 921600
-        mmio::write(IBRD, 3);
-        mmio::write(FBRD, 16);
+        mmio::write(self.ibrd, 3);
+        mmio::write(self.fbrd, 16);
 
         // Enable FIFOS, 8 bit world length, no parity
-        mmio::write(LCRH, (1 << LCRH_FEN) | (0b11 << LCRH_WLEN));
+        mmio::write(self.lcrh, (1 << LCRH_FEN) | (0b11 << LCRH_WLEN));
 
         // Enable UART, UART TX and RX
-        mmio::write(CR, (1 << CR_EN) | (1 << CR_TXE) | (1 << CR_RXE));
+        mmio::write(self.cr, (1 << CR_EN) | (1 << CR_TXE) | (1 << CR_RXE));
     }
 
     fn flush(&self) {
-        while mmio::read_bits(FR, FR_TXFF, 1) == 1 {
+        while mmio::read_bits(self.fr, FR_TXFF, 1) == 1 {
             unsafe {
                 asm!("nop");
             }
@@ -53,27 +50,27 @@ impl UARTDriverInner {
     }
 
     fn write(&mut self, c: u8) {
-        while mmio::read_bits(FR, FR_TXFF, 1) == 1 {
+        while mmio::read_bits(self.fr, FR_TXFF, 1) == 1 {
             unsafe {
                 asm!("nop");
             }
         }
 
-        mmio::write(DR, c as u32);
+        mmio::write(self.dr, c as u32);
     }
 
     fn read_blocking(&self) -> u8 {
-        while mmio::read_bits(FR, FR_RXFE, 1) == 1 {
+        while mmio::read_bits(self.fr, FR_RXFE, 1) == 1 {
             unsafe {
                 asm!("nop");
             }
         }
 
-        mmio::read(DR) as u8
+        mmio::read(self.dr) as u8
     }
 
     fn read(&self) -> Option<u8> {
-        if mmio::read_bits(FR, FR_RXFE, 1) == 1 {
+        if mmio::read_bits(self.fr, FR_RXFE, 1) == 1 {
             return None;
         }
         Some(self.read_blocking())
@@ -93,10 +90,19 @@ pub struct UARTDriver {
     inner: NullLock<UARTDriverInner>,
 }
 
+#[allow(dead_code)]
 impl UARTDriver {
-    pub const fn new() -> Self {
+    pub const fn new(base: usize) -> Self {
         Self {
-            inner: NullLock::new(UARTDriverInner {}),
+            inner: NullLock::new(UARTDriverInner {
+                dr: base + 0,
+                fr: base + 0x18,
+                ibrd: base + 0x24,
+                fbrd: base + 0x28,
+                lcrh: base + 0x2C,
+                cr: base + 0x30,
+                icr: base + 0x44,
+            }),
         }
     }
 

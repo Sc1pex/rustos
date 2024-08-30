@@ -1,4 +1,4 @@
-use crate::log;
+use crate::{log, memory};
 use gpio::GPIODriver;
 use manager::DriverManager;
 use uart::UARTDriver;
@@ -20,8 +20,8 @@ pub struct DriverDescriptor {
 pub const DRIVER_COUNT: usize = 2;
 static DRIVER_MANAGER: DriverManager<DRIVER_COUNT> = DriverManager::new();
 
-static GPIO_DRIVER: GPIODriver = GPIODriver::new();
-pub static UART_DRIVER: UARTDriver = UARTDriver::new();
+static GPIO_DRIVER: GPIODriver = GPIODriver::new(memory::map::mmio::GPIO_START);
+pub static UART_DRIVER: UARTDriver = UARTDriver::new(memory::map::mmio::UART0_START);
 
 pub unsafe fn setup_drivers() {
     let gpio_descriptor = DriverDescriptor {
