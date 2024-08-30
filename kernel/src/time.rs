@@ -1,4 +1,5 @@
-use crate::{read_reg, warn};
+use crate::warn;
+use aarch64_cpu::registers::{Readable, CNTFRQ_EL0, CNTPCT_EL0};
 use core::{arch::asm, ops::Add, time::Duration};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]
@@ -12,23 +13,15 @@ impl Add for TimerValue {
     }
 }
 
-fn read_cntfrq() -> u64 {
-    read_reg!("CNTFRQ_EL0")
-}
-
-fn read_cntpct() -> u64 {
-    read_reg!("CNTPCT_EL0")
-}
-
 fn current_cntpct() -> TimerValue {
     // Make sure the read is not optimized by the cpu and ran ahead of time
     unsafe { asm!("isb sy") };
-    TimerValue(read_cntpct())
+    TimerValue(CNTPCT_EL0.get())
 }
 
 impl From<TimerValue> for Duration {
     fn from(value: TimerValue) -> Self {
-        let frq = read_cntfrq();
+        let frq = CNTFRQ_EL0.get();
 
         let secs = value.0 / frq;
 
@@ -51,7 +44,7 @@ impl TryFrom<Duration> for TimerValue {
         }
 
         let total = value.as_nanos();
-        let frq = read_cntfrq() as u128;
+        let frq = CNTFRQ_EL0.get() as u128;
         let val = (frq * total) / 1_000_000_000;
 
         Ok(TimerValue(val as u64))
@@ -81,5 +74,5 @@ pub fn spin_for(duration: Duration) {
         }
     };
     let target = curr_count + count_delta;
-    while TimerValue(read_cntpct()) < target {}
+    while TimerValue(CNTPCT_EL0.get()) < target {}
 }
