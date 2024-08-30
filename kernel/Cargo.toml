@@ -6,3 +6,7 @@ edition = "2021"
 [features]
 default = []
 debug_wait = []
+
+[dependencies]
+aarch64-cpu = "9.4.0"
+tock-registers = "0.9.0"
