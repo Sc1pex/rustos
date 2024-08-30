@@ -56,7 +56,7 @@ impl<const LAYOUTS: usize> KernelVirtualLayout<LAYOUTS> {
     }
 }
 
-pub(super) static KERNEL_LAYOUT: KernelVirtualLayout<4> = KernelVirtualLayout {
+pub(super) static KERNEL_LAYOUT: KernelVirtualLayout<3> = KernelVirtualLayout {
     max_virt_addr: super::map::END_INCLUSIVE,
 
     layouts: [
@@ -85,19 +85,6 @@ pub(super) static KERNEL_LAYOUT: KernelVirtualLayout<4> = KernelVirtualLayout {
                 execute_never: true,
             },
             map_to: None,
-        },
-        TranslationDescriptor {
-            name: "Remmaped MMIO",
-            virtual_range: || RangeInclusive {
-                start: 0x1FFF_0000,
-                end: 0x1FFF_FFFF,
-            },
-            attribute_fields: AttributeFields {
-                mem_attributes: MemAttributes::Device,
-                acc_perms: AccessPermissions::ReadWrite,
-                execute_never: true,
-            },
-            map_to: Some(super::map::mmio::START + 0x20_0000),
         },
         TranslationDescriptor {
             name: "Other memory",
