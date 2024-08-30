@@ -1,3 +1,5 @@
+use core::ops::Deref;
+
 use crate::{log, memory};
 use gpio::GPIODriver;
 use manager::DriverManager;
@@ -48,4 +50,26 @@ pub unsafe fn setup_drivers() {
 
 pub fn manager() -> &'static DriverManager<DRIVER_COUNT> {
     &DRIVER_MANAGER
+}
+
+struct MMIOWrapper<T> {
+    addr: usize,
+    _t: core::marker::PhantomData<fn() -> T>,
+}
+
+impl<T> MMIOWrapper<T> {
+    const fn new(addr: usize) -> Self {
+        Self {
+            addr,
+            _t: core::marker::PhantomData,
+        }
+    }
+}
+
+impl<T> Deref for MMIOWrapper<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { &*(self.addr as *const _) }
+    }
 }

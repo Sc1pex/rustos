@@ -1,48 +1,143 @@
-use super::Driver;
-use crate::{log::LogWrite, memory::mmio, sync::NullLock};
+use super::{Driver, MMIOWrapper};
+use crate::{log::LogWrite, sync::NullLock};
 use core::{arch::asm, fmt::Write};
+use tock_registers::{
+    interfaces::{Readable, Writeable},
+    register_bitfields, register_structs,
+    registers::{ReadOnly, ReadWrite, WriteOnly},
+};
 
-const LCRH_FEN: u32 = 4;
-const LCRH_WLEN: u32 = 5;
+register_bitfields! {u32,
+    /// Flag register
+    FR [
+        /// Transmit FIFO empty. The meaning of this bit depends on the state of the FEN bit in
+        /// the Line Control Register,UART_LCRH.
+        /// If the FIFO is disabled, this bit is set when the transmit holding register is empty.
+        /// If the FIFO is enabled, the TXFE bit is set when the transmit FIFO is empty. This bit
+        /// does not indicate if there is data in  the transmit shift register.
+        TXFE OFFSET(7) NUMBITS(1),
 
-const CR_EN: u32 = 0;
-const CR_TXE: u32 = 8;
-const CR_RXE: u32 = 9;
+        /// Receive FIFO full. The meaning of this bit depends on the state of the FEN bit in the
+        /// UART_LCRH Register.
+        /// If the FIFO is disabled, this bit is set when the receive holding register is full.
+        /// If the FIFO is enabled, the RXFF bit is set when the receive FIFO is full.
+        RXFF OFFSET(6) NUMBITS(1),
 
-const FR_RXFE: u32 = 4;
-const FR_TXFF: u32 = 5;
+        /// Transmit FIFO full. The meaning of this bit depends on the state of the FEN bit in the
+        /// UART_LCRH Register.
+        /// If the FIFO is disabled, this bit is set when the transmit holding register is full.
+        ///If the FIFO is enabled, the TXFF bit is set when the transmit FIFO is full.
+        TXFF OFFSET(5) NUMBITS(1),
+
+        /// Receive FIFO empty. The meaning of this bit depends on the state of the FEN bit in the
+        /// UART_LCRH Register.
+        /// If the FIFO is disabled, this bit is set when the receive holding register is empty.
+        /// If the FIFO is enabled, the RXFE bit is set when the receive FIFO is empty.
+        RXFE OFFSET(4) NUMBITS(1),
+
+        /// UART busy. If this bit is set to 1, the UART is busy transmitting data. This bit remains
+        /// set until the complete byte, including all the stop bits, has been sent from the shift
+        /// register.
+        /// This bit is set as soon as the transmit FIFO becomes non-empty, regardless of whether
+        /// the UART is enabled or not.
+        BUSY OFFSET(3) NUMBITS(1),
+
+        /// Clear to send. This bit is the complement of the UART clear to send, nUARTCTS, modem
+        /// status input. That is, the bit is 1 when nUARTCTS is LOW.
+        CTS OFFSET(0) NUMBITS(1),
+    ],
+
+    // Integer baud rate divisor
+    IBRD [
+        INT_BAUDDIV OFFSET(0) NUMBITS(16)
+    ],
+
+    // Fractional baud rate divisor
+    FBRD [
+        FRACT_BAUDDIV OFFSET(0) NUMBITS(6)
+    ],
+
+    // Line control register
+    LCRH [
+        /// Word length. These bits indicate the number of data bits transmitted or received
+        WLEN OFFSET(5) NUMBITS(2) [
+            Bits5 = 0b00,
+            Bits6 = 0b01,
+            Bits7 = 0b10,
+            Bits8 = 0b11,
+        ],
+
+        /// Enable FIFOs:
+        ///     0 = FIFOs are disabled (character mode) that is, the FIFOs become 1-byte-deep
+        ///         holding registers
+        ///     1 = transmit and receive FIFO buffers are enabled (FIFO mode).
+        FEN OFFSET(4) NUMBITS(1) [
+            Enable = 1,
+            Disable = 0,
+        ],
+    ],
+
+    // Control register
+    CR [
+        /// Receive enable. If this bit is set to 1, the receive section of the UART is enabled.
+        RXE OFFSET(9) NUMBITS(1),
+
+        /// Transmit enable. If this bit is set to 1, the transmit section of the UART is enabled
+        TXE OFFSET(8) NUMBITS(1),
+
+        /// UART enable:
+        ///     0 = UART is disabled. If the UART is disabled in the middle of transmission or
+        ///         reception, it completes the current character before stopping.
+        ///     1 = the UART is enabled.
+        EN OFFSET(0) NUMBITS(1)
+    ],
+
+    // Interrupt clear register
+    ICR [
+        ALL OFFSET(0) NUMBITS(11),
+    ]
+}
+
+register_structs! {
+    pub UartRegisters {
+        (0x00 => dr: ReadWrite<u32>),
+        (0x04 => _res1),
+        (0x18 => fr: ReadOnly<u32, FR::Register>),
+        (0x1c => _res2),
+        (0x24 => ibrd: WriteOnly<u32, IBRD::Register>),
+        (0x28 => fbrd: WriteOnly<u32, FBRD::Register>),
+        (0x2c => lcrh: WriteOnly<u32, LCRH::Register>),
+        (0x30 => cr: WriteOnly<u32, CR::Register>),
+        (0x34 => _res3),
+        (0x44 => icr: WriteOnly<u32, ICR::Register>),
+        (0x48 => @END),
+    }
+}
 
 struct UARTDriverInner {
-    dr: usize,
-    fr: usize,
-    ibrd: usize,
-    fbrd: usize,
-    lcrh: usize,
-    cr: usize,
-    icr: usize,
+    regs: MMIOWrapper<UartRegisters>,
 }
 impl UARTDriverInner {
     fn init(&self) {
         // Panic initializes it's own uart driver
         // so make sure there's no data left to write
         self.flush();
+        let regs = &self.regs;
 
-        mmio::write(self.cr, 0); // Disable UART
-        mmio::write(self.icr, 0); // Clear pending interrups
+        regs.cr.write(CR::EN::CLEAR);
+        regs.icr.write(ICR::ALL::CLEAR);
 
         // Set baudrate to 921600
-        mmio::write(self.ibrd, 3);
-        mmio::write(self.fbrd, 16);
+        regs.ibrd.write(IBRD::INT_BAUDDIV.val(3));
+        regs.fbrd.write(FBRD::FRACT_BAUDDIV.val(16));
 
-        // Enable FIFOS, 8 bit world length, no parity
-        mmio::write(self.lcrh, (1 << LCRH_FEN) | (0b11 << LCRH_WLEN));
+        regs.lcrh.write(LCRH::FEN::Enable + LCRH::WLEN::Bits8);
 
-        // Enable UART, UART TX and RX
-        mmio::write(self.cr, (1 << CR_EN) | (1 << CR_TXE) | (1 << CR_RXE));
+        regs.cr.write(CR::EN::SET + CR::TXE::SET + CR::RXE::SET);
     }
 
     fn flush(&self) {
-        while mmio::read_bits(self.fr, FR_TXFF, 1) == 1 {
+        while self.regs.fr.matches_all(FR::TXFF::SET) {
             unsafe {
                 asm!("nop");
             }
@@ -50,27 +145,27 @@ impl UARTDriverInner {
     }
 
     fn write(&mut self, c: u8) {
-        while mmio::read_bits(self.fr, FR_TXFF, 1) == 1 {
+        while self.regs.fr.matches_all(FR::TXFF::SET) {
             unsafe {
                 asm!("nop");
             }
         }
 
-        mmio::write(self.dr, c as u32);
+        self.regs.dr.set(c as u32);
     }
 
     fn read_blocking(&self) -> u8 {
-        while mmio::read_bits(self.fr, FR_RXFE, 1) == 1 {
+        while self.regs.fr.matches_all(FR::RXFE::SET) {
             unsafe {
                 asm!("nop");
             }
         }
 
-        mmio::read(self.dr) as u8
+        self.regs.dr.get() as u8
     }
 
     fn read(&self) -> Option<u8> {
-        if mmio::read_bits(self.fr, FR_RXFE, 1) == 1 {
+        if self.regs.fr.matches_all(FR::RXFE::SET) {
             return None;
         }
         Some(self.read_blocking())
@@ -95,13 +190,7 @@ impl UARTDriver {
     pub const fn new(base: usize) -> Self {
         Self {
             inner: NullLock::new(UARTDriverInner {
-                dr: base + 0,
-                fr: base + 0x18,
-                ibrd: base + 0x24,
-                fbrd: base + 0x28,
-                lcrh: base + 0x2C,
-                cr: base + 0x30,
-                icr: base + 0x44,
+                regs: MMIOWrapper::new(base),
             }),
         }
     }
