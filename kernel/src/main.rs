@@ -15,7 +15,6 @@ mod log;
 mod memory;
 mod panic;
 mod sync;
-mod sys_reg;
 mod time;
 
 unsafe fn kernel_init() -> ! {
