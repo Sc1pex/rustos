@@ -1,5 +1,5 @@
 use super::Driver;
-use crate::{memory::mmio, sync::NullLock};
+use crate::sync::NullLock;
 
 #[allow(dead_code)]
 pub enum Function {
@@ -49,10 +49,10 @@ impl GPIODriverInner {
         let reg = base + ((pin / num_fields) * 4) as usize;
         let shift = (pin % num_fields) * field_size;
 
-        let mut reg_val = mmio::read(reg);
+        let mut reg_val = mmio_read(reg);
         reg_val &= !(field_mask << shift);
         reg_val |= val << shift;
-        mmio::write(reg, reg_val);
+        mmio_write(reg, reg_val);
     }
 }
 
@@ -97,5 +97,15 @@ impl GPIODriver {
 impl Driver for GPIODriver {
     unsafe fn init(&self) -> Result<(), &'static str> {
         Ok(())
+    }
+}
+
+fn mmio_read(addr: usize) -> u32 {
+    unsafe { core::ptr::read_volatile(addr as *const u32) }
+}
+
+fn mmio_write(addr: usize, val: u32) {
+    unsafe {
+        core::ptr::write_volatile(addr as *mut u32, val);
     }
 }
