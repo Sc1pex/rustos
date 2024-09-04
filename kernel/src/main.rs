@@ -21,6 +21,7 @@ unsafe fn kernel_init() -> ! {
     #[cfg(feature = "debug_wait")]
     core::arch::asm!("1:", "wfe", "b 1b");
 
+    exception::init_handlers();
     mmu::enable().unwrap();
 
     driver::setup_drivers();
@@ -36,7 +37,11 @@ fn kernel_start() -> ! {
     memory::print_kernel_memory_layout();
 
     info!("Spinning for 1 seconds");
-    time::spin_for(Duration::from_secs(2));
+    time::spin_for(Duration::from_secs(1));
+
+    info!("Trying to read from address 8 GiB...");
+    let big_addr: u64 = 8 * 1024 * 1024 * 1024;
+    unsafe { core::ptr::read_volatile(big_addr as *mut u64) };
 
     loop {
         if let Some(c) = driver::UART_DRIVER.read_char() {
