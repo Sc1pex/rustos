@@ -119,9 +119,6 @@ struct UARTDriverInner {
 }
 impl UARTDriverInner {
     fn init(&self) {
-        // Panic initializes it's own uart driver
-        // so make sure there's no data left to write
-        self.flush();
         let regs = &self.regs;
 
         regs.cr.write(CR::EN::CLEAR);

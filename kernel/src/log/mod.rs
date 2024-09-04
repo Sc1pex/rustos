@@ -8,6 +8,7 @@ pub enum LogLevel {
     Info,
     Warn,
     Error,
+    Fatal,
 }
 
 impl core::fmt::Display for LogLevel {
@@ -16,6 +17,7 @@ impl core::fmt::Display for LogLevel {
             LogLevel::Info => write!(f, "Info"),
             LogLevel::Warn => write!(f, "Warn"),
             LogLevel::Error => write!(f, "Error"),
+            LogLevel::Fatal => write!(f, "Fatal"),
         }
     }
 }
@@ -65,5 +67,12 @@ macro_rules! warn {
 macro_rules! error {
     ($($args: tt)*) => {
         $crate::log::logger().log($crate::log::LogLevel::Error, format_args_nl!($($args)*))
+    };
+}
+
+#[macro_export]
+macro_rules! fatal {
+    ($($args: tt)*) => {
+        $crate::log::logger().log($crate::log::LogLevel::Fatal, format_args_nl!($($args)*))
     };
 }
