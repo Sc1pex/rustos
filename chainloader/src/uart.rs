@@ -101,4 +101,10 @@ impl Uart {
     pub fn write(&self, c: u8) {
         write(c)
     }
+
+    pub fn write_slice(&self, s: &[u8]) {
+        for c in s {
+            write(*c)
+        }
+    }
 }
