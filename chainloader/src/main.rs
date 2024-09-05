@@ -36,8 +36,11 @@ fn kernel_start() -> ! {
         blocks += 1
     }
 
-    let mut remaning = kernel_size as usize;
     let kernel_addr = 0x80000 as *mut u8;
+    let kernel_data: &mut [u8] =
+        unsafe { core::slice::from_raw_parts_mut(kernel_addr, kernel_size as usize) };
+
+    let mut remaning = kernel_size as usize;
     for b in 0..blocks {
         let mut verify_buf = [0; BLOCK_SIZE];
         let verify = &mut verify_buf[0..BLOCK_SIZE.min(remaning)];
@@ -56,12 +59,7 @@ fn kernel_start() -> ! {
         }
 
         for (i, c) in verify.iter().enumerate() {
-            unsafe {
-                core::ptr::write_volatile(
-                    kernel_addr.offset((b * BLOCK_SIZE as u32 + i as u32) as isize),
-                    *c,
-                );
-            }
+            kernel_data[(b * BLOCK_SIZE as u32 + i as u32) as usize] = *c;
         }
 
         remaning -= BLOCK_SIZE;
