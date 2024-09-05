@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"os"
+	"slices"
 
 	"go.bug.st/serial"
 )
@@ -25,15 +26,7 @@ func (u Upload) run(state AppState) (State, error) {
 }
 
 func uploadBytes(kernel []byte, state AppState) error {
-	const blockSize = 512
-
 	size := uint32(len(kernel))
-	if size%blockSize != 0 {
-		size += 512 - (size % blockSize)
-		kernel_padd := make([]byte, size)
-		copy(kernel_padd, kernel)
-		kernel = kernel_padd
-	}
 
 	buf := new(bytes.Buffer)
 	err := binary.Write(buf, binary.LittleEndian, size)
@@ -43,11 +36,15 @@ func uploadBytes(kernel []byte, state AppState) error {
 
 	state.port.Write(buf.Bytes())
 
-	blocks := size / uint32(blockSize)
+	const blockSize = 512
+	blocks := size / blockSize
+	if size%blockSize != 0 {
+		blocks += 1
+	}
 
-	for b := range blocks {
+	b := 1
+	for block := range slices.Chunk(kernel, blockSize) {
 		for {
-			block := kernel[(b * uint32(blockSize)):((b + 1) * uint32(blockSize))]
 			err := writeAll(state.port, block)
 			if err != nil {
 				return err
@@ -75,6 +72,7 @@ func uploadBytes(kernel []byte, state AppState) error {
 			}
 		}
 		fmt.Printf("Wrote block %v/%v\r", b+1, blocks)
+		b += 1
 	}
 
 	return nil

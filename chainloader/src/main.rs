@@ -30,17 +30,24 @@ fn kernel_start() -> ! {
         kernel_size[i] = UART.read_blocking();
     }
     let kernel_size = u32::from_le_bytes(kernel_size);
-    let blocks = kernel_size / BLOCK_SIZE as u32;
 
+    let mut blocks = kernel_size / BLOCK_SIZE as u32;
+    if kernel_size % BLOCK_SIZE as u32 != 0 {
+        blocks += 1
+    }
+
+    let mut remaning = kernel_size as usize;
     let kernel_addr = 0x80000 as *mut u8;
     for b in 0..blocks {
-        let mut verify = [0; BLOCK_SIZE];
+        let mut verify_buf = [0; BLOCK_SIZE];
+        let verify = &mut verify_buf[0..BLOCK_SIZE.min(remaning)];
+
         loop {
-            for v in &mut verify {
+            for v in verify.iter_mut() {
                 *v = UART.read_blocking();
             }
 
-            for v in &verify {
+            for v in verify.iter_mut() {
                 UART.write(*v)
             }
             if UART.read_blocking() == b'G' {
@@ -56,6 +63,8 @@ fn kernel_start() -> ! {
                 );
             }
         }
+
+        remaning -= BLOCK_SIZE;
     }
 
     let kernel: fn() -> ! = unsafe { core::mem::transmute(kernel_addr) };
