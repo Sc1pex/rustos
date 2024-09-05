@@ -18,7 +18,7 @@ chainloader-debug:
 	@llvm-objcopy -O binary target/aarch64-unknown-none/debug/chainloader kernel8.img 
 
 push: all
-	@./serial/serial kernel8.img
+	@./serialpush/serialpush kernel8.img
 
 push-debug: debug
-	@./serial/serial kernel8.img
+	@./serialpush/serialpush kernel8.img
